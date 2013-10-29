@@ -1192,6 +1192,17 @@ class JsdocsDecorateCommand(sublime_plugin.TextCommand):
             v.insert(edit, sel.begin(), "/" * (lineLength + 3) + "\n")
 
 
+class JsdocsDecorateExpandCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        v = self.view
+        for region in v.sel():
+            line    = v.line(region)
+            linestr = v.substr(line)
+            newline    = '//' + ' '.join(list(linestr.upper().replace('//', '')))[1:]
+            v.replace(edit, line, newline)
+            v.run_command('jsdocs_decorate')
+
+
 class JsdocsDeindent(sublime_plugin.TextCommand):
     """
     When pressing enter at the end of a docblock, this takes the cursor back one space.

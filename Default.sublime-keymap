@@ -194,6 +194,12 @@
       { "key": "selector", "operator": "equal", "operand": "comment.line.double-slash"}
     ]
   },
+  // decorate and expand double-slash comment
+  { "keys": ["shift+ctrl+enter"], "command": "jsdocs_decorate_expand",
+    "context": [
+      { "key": "selector", "operator": "equal", "operand": "comment.line.double-slash"}
+    ]
+  },
   // decorate a double-slash comment
   { "keys": ["ctrl+keypad_enter"], "command": "jsdocs_decorate",
     "context": [
