@@ -64,6 +64,8 @@ def getParser(view):
         return JsdocsObjC(viewSettings)
     elif sourceLang == 'java' or sourceLang == 'groovy':
         return JsdocsJava(viewSettings)
+    elif sourceLang == 'rust':
+        return JsdocsRust(viewSettings)
     return JsdocsJavascript(viewSettings)
 
 
@@ -417,10 +419,10 @@ class JsdocsParser(object):
         current = ''
 
         # characters which open a section inside which commas are not separators between different arguments
-        openQuotes  = '"\'<'
+        openQuotes  = '"\'<('
         # characters which close the the section. The position of the character here should match the opening
         # indicator in `openQuotes`
-        closeQuotes = '"\'>'
+        closeQuotes = '"\'>)'
 
         matchingQuote = ''
         insideQuotes = False
@@ -718,7 +720,7 @@ class JsdocsCPP(JsdocsParser):
             'typeTag': 'param',
             'commentCloser': ' */',
             'fnIdentifier': identifier,
-            'varIdentifier': identifier + '(?:\\[' + identifier + '\\])?',
+            'varIdentifier': '(' + identifier + ')\\s*(?:\\[(?:' + identifier + ')?\\]|\\((?:(?:\\s*,\\s*)?[a-z]+)+\\s*\\))?',
             'fnOpener': identifier + '\\s+' + identifier + '\\s*\\(',
             'bool': 'bool',
             'function': 'function'
@@ -747,7 +749,7 @@ class JsdocsCPP(JsdocsParser):
         return None
 
     def getArgName(self, arg):
-        return re.search("(" + self.settings['varIdentifier'] + r")(?:\s*\[\s*\])?(?:\s*=.*)?$", arg).group(1)
+        return re.search(self.settings['varIdentifier'] + r"(?:\s*=.*)?$", arg).group(1)
 
     def parseVar(self, line):
         return None
@@ -1089,6 +1091,32 @@ class JsdocsJava(JsdocsParser):
                 break
         return definition
 
+class JsdocsRust(JsdocsParser):
+    def setupSettings(self):
+        self.settings = {
+            "curlyTypes": False,
+            'typeInfo': False,
+            "typeTag": False,
+            "varIdentifier": ".*",
+            "fnIdentifier":  ".*",
+            "fnOpener": "^\s*fn",
+            "commentCloser": " */",
+            "bool": "Boolean",
+            "function": "Function"
+        }
+
+    def parseFunction(self, line):
+        res = re.search('\s*fn\s+(?P<name>\S+)', line)
+        if not res:
+            return None
+
+        name = res.group('name').join('');
+
+        return (name, [])
+
+    def formatFunction(self, name, args):
+        return name
+
 ############################################################33
 
 
@@ -1133,7 +1161,7 @@ class JsdocsJoinCommand(sublime_plugin.TextCommand):
         v = self.view
         for sel in v.sel():
             for lineRegion in reversed(v.lines(sel)):
-                v.replace(edit, v.find("[ \\t]*\\n[ \\t]*((?:\\*|//|#)[ \\t]*)?", lineRegion.begin()), ' ')
+                v.replace(edit, v.find("[ \\t]*\\n[ \\t]*((?:\\*|//[!/]?|#)[ \\t]*)?", lineRegion.begin()), ' ')
 
 
 class JsdocsDecorateCommand(sublime_plugin.TextCommand):
